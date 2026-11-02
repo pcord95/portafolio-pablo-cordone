@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kimberley N5 | Terminal de Análisis Táctico</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<!-- ======================= PANTALLA 1: SESIONES ======================= -->
+<div id="screen-sesiones" class="screen">
+    <header class="topbar">
+        <div class="brand">
+            <div class="brand-dot"></div>
+            <h1>Kimberley N5 <span class="brand-sub">Terminal de Campo</span></h1>
+        </div>
+    </header>
+
+    <div class="sesiones-layout">
+        <section class="card">
+            <h3>Sesiones anteriores</h3>
+            <div id="lista-sesiones" class="lista-sesiones">
+                <p class="muted">Cargando…</p>
+            </div>
+        </section>
+
+        <section class="card">
+            <h3>Nueva sesión</h3>
+            <form id="form-nueva-sesion" class="form-vertical">
+                <div class="campo">
+                    <label for="ns-partido">Partido</label>
+                    <input type="text" id="ns-partido" placeholder="Kimberley vs. Rival" required>
+                </div>
+                <div class="campo">
+                    <label for="ns-fecha">Fecha</label>
+                    <input type="date" id="ns-fecha" required>
+                </div>
+                <div class="campo">
+                    <label for="ns-rival">Rival</label>
+                    <input type="text" id="ns-rival" placeholder="Nombre del rival" required>
+                </div>
+                <div class="campo">
+                    <label for="ns-video">Archivo de video</label>
+                    <input type="file" id="ns-video" accept="video/mp4,video/quicktime,video/x-msvideo,video/x-matroska,.mp4,.mov,.avi,.mkv">
+                </div>
+                <button type="submit" class="btn-primary">Crear sesión y empezar</button>
+            </form>
+        </section>
+    </div>
+</div>
+
+<!-- ======================= PANTALLA 2: ANÁLISIS ======================= -->
+<div id="screen-analisis" class="screen hidden">
+    <header class="topbar">
+        <div class="brand">
+            <div class="brand-dot"></div>
+            <h1 id="titulo-sesion">Kimberley N5</h1>
+        </div>
+        <div class="topbar-info">
+            <span id="contador-total" class="pill">0 eventos</span>
+            <button id="btn-volver" class="btn-ghost">← Sesiones</button>
+        </div>
+    </header>
+
+    <div class="analisis-layout">
+        <!-- Columna izquierda: video + cancha -->
+        <div class="columna-video">
+            <div id="video-loader" class="video-loader">
+                <p>Seleccioná el archivo de video de esta sesión para empezar a reproducir.</p>
+                <input type="file" id="input-video-local" accept="video/mp4,video/quicktime,video/x-msvideo,video/x-matroska,.mp4,.mov,.avi,.mkv">
+            </div>
+
+            <div id="video-wrapper" class="video-wrapper hidden">
+                <video id="video-player" preload="metadata"></video>
+
+                <div class="seekbar-container" id="seekbar-container">
+                    <div class="seek-progreso" id="seek-progreso">
+                        <div class="seek-progreso-relleno" id="seek-progreso-relleno"></div>
+                    </div>
+                    <div class="seek-seleccion" id="seek-seleccion">
+                        <div class="seek-seleccion-zona" id="seek-seleccion-zona"></div>
+                        <div class="seek-manija seek-manija-in" id="manija-in" title="Entrada — tecla I">[</div>
+                        <div class="seek-manija seek-manija-out" id="manija-out" title="Salida — tecla O">]</div>
+                    </div>
+                    <div class="seek-info">
+                        <span id="seek-duracion-label" class="mono muted">Sin rango</span>
+                        <button type="button" id="btn-preview" class="btn-secondary" disabled title="Primero marca un rango">▶ Preview</button>
+                    </div>
+                </div>
+
+                <div class="video-controls">
+                    <button id="btn-play-pause" class="btn-icon" title="Espacio">▶</button>
+                    <span id="timecode" class="timecode">00:00:00.000</span>
+                    <select id="select-velocidad" title="Velocidad">
+                        <option value="0.25">0.25×</option>
+                        <option value="0.5">0.5×</option>
+                        <option value="0.75">0.75×</option>
+                        <option value="1" selected>1×</option>
+                        <option value="1.5">1.5×</option>
+                        <option value="2">2×</option>
+                    </select>
+                    <button id="btn-back5" class="btn-icon" title="Shift+←">-5s</button>
+                    <button id="btn-back1" class="btn-icon" title="←">-1s</button>
+                    <button id="btn-fwd1" class="btn-icon" title="→">+1s</button>
+                    <button id="btn-fwd5" class="btn-icon" title="Shift+→">+5s</button>
+                    <button id="btn-nuevo-evento" class="btn-primary" title="I">+ Evento (I)</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Cancha — zona actual: <span id="zona-actual">sin seleccionar</span></h3>
+                <div id="pitch-container"></div>
+            </div>
+
+            <div class="card atajos">
+                <h3>Atajos</h3>
+                <ul>
+                    <li><kbd>Espacio</kbd> pausa/reanuda</li>
+                    <li><kbd>I</kbd> marca entrada (abre el panel)</li>
+                    <li><kbd>O</kbd> marca salida</li>
+                    <li><kbd>1</kbd>–<kbd>5</kbd> categoría</li>
+                    <li><kbd>Enter</kbd> guardar</li>
+                    <li><kbd>Esc</kbd> cancelar</li>
+                    <li><kbd>←</kbd>/<kbd>→</kbd> ±1s · <kbd>Shift</kbd>+<kbd>←</kbd>/<kbd>→</kbd> ±5s</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Columna derecha: contadores + tabla -->
+        <div class="columna-panel">
+            <div class="card">
+                <h3>Eventos por categoría</h3>
+                <div id="contadores-categoria" class="contadores"></div>
+            </div>
+
+            <div class="card export-card">
+                <h3>Exportar</h3>
+                <button id="btn-export-csv" class="btn-secondary">Descargar CSV</button>
+                <button id="btn-export-json" class="btn-secondary">Descargar JSON (backup)</button>
+            </div>
+
+            <div class="card tabla-card">
+                <h3>Registro de eventos</h3>
+                <button id="btn-descargar-clips" class="btn-secondary hidden">⬇ Descargar todos los clips</button>
+                <div class="tabla-wrapper">
+                    <table id="tabla-eventos">
+                        <thead>
+                            <tr>
+                                <th>Time</th><th>Min.</th><th>Categoría</th><th>Subcat.</th>
+                                <th>Zona</th><th>Res.</th><th>Contexto</th><th>Dur.</th><th>Clip</th><th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-eventos-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ======================= FORMULARIO DE EVENTO (overlay) ======================= -->
+<div id="overlay-formulario" class="overlay hidden">
+    <div class="modal">
+        <h3>Registrar evento</h3>
+        <form id="form-evento" class="form-vertical">
+            <div class="campo">
+                <label>Segmento <span class="muted">— arrastrá las manijas o usá I / O</span></label>
+                <div id="ev-segmento-display" class="segmento-display mono">Sin rango — arrastra las manijas o usa I y O</div>
+            </div>
+            <div class="campo">
+                <label for="ev-minuto">Minuto de partido</label>
+                <input type="text" id="ev-minuto" placeholder="37+2">
+            </div>
+
+            <div class="campo">
+                <label for="ev-categoria">Categoría <span class="muted">(1-5)</span></label>
+                <select id="ev-categoria" required></select>
+            </div>
+
+            <div class="campo">
+                <label for="ev-subcategoria">Subcategoría</label>
+                <select id="ev-subcategoria" required></select>
+            </div>
+
+            <div class="campo">
+                <label>Zona</label>
+                <input type="text" id="ev-zona" placeholder="Click en la cancha o escribí (ej. M3)">
+            </div>
+
+            <div class="campo">
+                <label>Resultado</label>
+                <div class="opciones-resultado" id="ev-resultado-grupo">
+                    <button type="button" class="opcion-btn" data-valor="positivo">Positivo</button>
+                    <button type="button" class="opcion-btn" data-valor="neutro">Neutro</button>
+                    <button type="button" class="opcion-btn" data-valor="negativo">Negativo</button>
+                </div>
+                <input type="hidden" id="ev-resultado" required>
+            </div>
+
+            <div class="campo">
+                <label for="ev-contexto">Contexto</label>
+                <select id="ev-contexto" required></select>
+            </div>
+
+            <div class="campo">
+                <label for="ev-memo">Memo (opcional)</label>
+                <textarea id="ev-memo" rows="2"></textarea>
+            </div>
+
+            <div class="modal-botones">
+                <button type="button" id="btn-cancelar-evento" class="btn-ghost">Cancelar (Esc)</button>
+                <button type="submit" class="btn-primary">Guardar (Enter)</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="toast-container" class="toast-container"></div>
+
+<script src="{{ url_for('static', filename='pitch.js') }}"></script>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

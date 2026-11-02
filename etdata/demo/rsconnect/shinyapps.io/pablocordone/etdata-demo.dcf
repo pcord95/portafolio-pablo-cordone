@@ -1,0 +1,10 @@
+name: etdata-demo
+title:
+username: pablocordone
+account: pablocordone
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 18336313
+bundleId: 12767776
+url: https://pablocordone.shinyapps.io/etdata-demo/
+version: 1
